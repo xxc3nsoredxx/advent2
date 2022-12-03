@@ -7,5 +7,5 @@ Advent of Code, syscall edition :)
 See here_
 
 
-.. _here
+.. _here:
    https://osg.tuhh.de/Advent/
