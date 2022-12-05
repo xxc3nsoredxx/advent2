@@ -1,5 +1,5 @@
-; TODO:
-;   - print whether in parent or child after fork
+; The output may sometimes be a bit wonky due to race conditions in writing to
+; stdout
 %include "lib.h"
 
 global _start
@@ -8,6 +8,23 @@ section .text
 _start:
     call fork
 
+    cmp rax, 0              ; clone(2) returns child TID in rax to parent and 0
+    je  .in_child           ; to the child
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, .in_parent_str
+    mov rdx, .in_parent_len
+    syscall
+    jmp .print_pid
+
+.in_child:
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, .in_child_str
+    mov rdx, .in_child_len
+    syscall
+
+.print_pid
     mov rax, SYS_GETPID
     syscall
 
@@ -24,7 +41,14 @@ _start:
     mov rdi, 0
     syscall
 
-.nl:                        ; Just store a newline
+; Some strings
+.in_parent_str:
+    db  'In parent, PID: '
+.in_parent_len: equ $ - .in_parent_str
+.in_child_str:
+    db  'In child, PID: '
+.in_child_len:  equ $ - .in_child_str
+.nl:
     db  0x0a
 
 ; Implement fork(2) with clone(2)
